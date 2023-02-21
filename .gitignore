@@ -1,0 +1,11 @@
+# Ignore temporary Rust artifacts
+target
+Cargo.lock
+
+# Ignore program artifacts
+/config.toml
+/output
+/example-sem-image-for-analysis.tif
+
+# Ignore directory potentially samples directory
+/samples
