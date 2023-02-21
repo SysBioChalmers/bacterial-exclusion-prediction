@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Graphene analysis</title>
+    </head>
+    <body>
+        <style>
+            body {
+                background-color: #fff;
+                color: #000;
+                margin: 0;
+            }
+
+            main {
+                margin: 10px;
+            }
+
+            img {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+            }
+
+            footer {
+                background-color: #333;
+                color: #fff;
+                padding: 10px;
+            }
+
+            section input:read-only {
+                color: grey;
+            }
+
+            table {
+              width: 100%;
+            }
+
+            td {
+              width: 33%;
+            }
+        </style>
+        <main>
+            <h1>Graphene image analysis</h1>
+            <h1>{{error}}</h1>
+            <h2>Parameters</h2>
+            <form action="/" method="get" id="form">
+                <section>
+                    <h3>General</h3>
+                    The path to the image: <input name="path" type="text" value="{{path}}"><br>
+                </section>
+                <section>
+                    <h3>Automatic scale (text recognition)</h3>
+                    Override the text recognition with the values below: <input type="hidden" name="override_scale" value="no"> <input id="text-recognition" type="checkbox" name="override_scale" {{checkbox config.text_recognition.override_scale}}><br>
+                    The height of the image footer (px): <input class="text-recognition" name="text_bar_height" type="number" min=0 step="1" value="{{config.text_recognition.scale_bar_height}}"><br>
+                    The number at the center of the scale (μm): <input class="text-recognition" name="override_scale_micrometers" type="number" min=0 step="any" value="{{float config.text_recognition.override_scale_micrometers}}"><br>
+                    The length of the entire scale bar (pixels): <input class="text-recognition" name="override_scale_pixels" type="number" min=0 step="1" value="{{config.text_recognition.override_scale_pixels}}"><br>
+                </section>
+                <section>
+                    <h3>Bacteria exclusion</h3>
+                    Calculate the bacteria exclusion: <input type="hidden" name="bacteria_exclusion" value="no"> <input id="bacteria-exclusion" type="checkbox" name="bacteria_exclusion" {{checkbox config.bacteria_exclusion.enabled}}><br>
+                    The contrast threshold for a valid edge (0-255): <input class="bacteria-exclusion" name="graphene_contrast_threshold" type="number" min=0 max=255 step="any" value="{{config.bacteria_exclusion.contrast_threshold}}"><br>
+                    The minimum area for a edge to be valid (pixels): <input class="bacteria-exclusion" name="graphene_minimum_edge_area" type="number" min=0 value="{{config.bacteria_exclusion.minimum_edge_area}}"><br>
+                    The radius around the graphene edge (μm / pixels) to exclude bacteria: <input class="bacteria-exclusion" name="graphene_edge_bacteria_exclusion_radius" type="number" min=0 step="any" value="{{float config.bacteria_exclusion.exclusion_radius}}"><br>
+                </section>
+                <section>
+                    <h3>Graphene angles</h3>
+                    Calculate the graphene angles: <input type="hidden" name="graphene_angles" value="no"> <input id="graphene-angles" type="checkbox" name="graphene_angles" {{checkbox config.graphene_angles.enabled}}><br>
+                    threshold for graphene (0-255): <input class="graphene-angles" name="graphene_angle_contrast_threshold" type="number" min=0 max=255 value="{{config.graphene_angles.threshold}}"><br>
+                    Minimum graphene length (μm / pixels): <input class="graphene-angles" name="min_graphene_size" type="number" min=0 step="any" value="{{float config.graphene_angles.min_graphene_size}}"><br>
+                    Minimum graphene ratio between length and height, (length / height): <input class="graphene-angles" name="min_graphene_ratio" type="number" min=0 step="any" value="{{float config.graphene_angles.min_graphene_ratio}}"><br>
+                </section>
+                <section>
+                    <h3>Export / import</h3>
+                    Path to configuration file: <input name="configuration_path" type="text" value="{{configuration_path}}"><br>
+                    Save configuration to path on submit: <input type="hidden" name="save_config" value="no"> <input type="checkbox" name="save_config"><br>
+                    Load configuration from path on submit (will override current configuration): <input type="hidden" name="load_config" value="no"> <input type="checkbox" name="load_config"><br>
+                </section>
+                <input type="submit" value="Submit parameters"/>
+            </form>
+
+            <h2>Analysis output</h2>
+            <h3>{{ scale }}</h3>
+            <table>
+             <tr>
+               <td>{{ optional_image config.bacteria_exclusion.enabled "/graphene.png" "Graphene edges detection" }}</td>
+               <td><h3>{{ bacteria_exclusion }}</h3>{{ optional_image config.bacteria_exclusion.enabled "/bacteria-exclusion.png" }}</td>
+             </tr>
+             <tr>
+               <td>{{ optional_image config.graphene_angles.enabled "/angles.png" "Flake orientation detection" }}</td>
+               <td>{{ optional_image config.graphene_angles.enabled "/angle-histogram.png" "Flake orientation distribution" }}</td>
+               <td>{{ optional_image config.graphene_angles.enabled "/length-histogram.png" "Flake length distribution" }}</td>
+             </tr>
+           </table>
+        </main>
+        <script>
+            // Script to disable inputs with the different checkboxes
+            function toggle(name) {
+                var toggle = document.getElementById(name);
+                var targets = document.getElementsByClassName(name);
+                var inverse_targets = document.getElementsByClassName(name + "-inverse");
+
+                for (var i = 0; i < targets.length; i++) {
+                    if (!toggle.checked) {
+                       targets[i].readOnly = true;
+                    } else {
+                       targets[i].readOnly = false;
+                    }
+                }
+
+                for (var i = 0; i < inverse_targets.length; i++) {
+                    if (toggle.checked) {
+                       inverse_targets[i].readOnly = true;
+                    } else {
+                       inverse_targets[i].readOnly = false;
+                    }
+                }
+            }
+
+            // Add one listener per category
+            document.getElementById("text-recognition").addEventListener('change', (event) => {
+                toggle("text-recognition");
+            });
+            document.getElementById("bacteria-exclusion").addEventListener('change', (event) => {
+                toggle("bacteria-exclusion");
+            });
+            document.getElementById("graphene-angles").addEventListener('change', (event) => {
+                toggle("graphene-angles");
+            });
+
+            // Set the initial state
+            toggle("text-recognition");
+            toggle("bacteria-exclusion");
+            toggle("graphene-angles");
+        </script>
+        <footer>
+            Image recognition and interface made by Teo Lovmar
+        </footer>
+    </body>
+</html>
